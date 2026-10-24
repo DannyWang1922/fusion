@@ -14,8 +14,9 @@ export function articleListKey(
   feedId: number | null,
   groupId: number | null,
   filter: string,
+  period = "recent",
 ): string {
-  return `${feedId ?? 0}:${groupId ?? 0}:${filter}`;
+  return `${feedId ?? 0}:${groupId ?? 0}:${filter}:${period}`;
 }
 
 interface ArticlePinsState {
@@ -70,6 +71,7 @@ export function useReadStatePins(filters: {
   feedId: number | null;
   groupId: number | null;
   articleFilter: string;
+  period?: string;
 }) {
   const pinItems = useArticlePinsStore((s) => s.pinItems);
   const unpinItems = useArticlePinsStore((s) => s.unpinItems);
@@ -77,6 +79,7 @@ export function useReadStatePins(filters: {
     filters.feedId,
     filters.groupId,
     filters.articleFilter,
+    filters.period,
   );
   const active = filters.articleFilter === "unread";
 

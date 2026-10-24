@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/0x2E/fusion/internal/model"
 )
@@ -19,6 +18,7 @@ import (
 // OrderBy accepts "pub_date" (default) or "created_at".
 // Limit = 0 means no limit.
 type ListItemsParams struct {
+	Period        string // "recent", "older", or empty for all stored dates
 	FeedID        *int64
 	GroupID       *int64
 	Unread        *bool
@@ -31,7 +31,7 @@ type ListItemsParams struct {
 func (s *Store) ListItems(params ListItemsParams) ([]*model.Item, error) {
 	query := `
 		SELECT items.id, items.feed_id, items.guid, items.title, items.link, items.content, items.pub_date, items.unread, items.created_at, items.categories
-		FROM visible_items AS items
+		FROM eligible_items AS items
 	`
 	args := []any{}
 
@@ -40,7 +40,7 @@ func (s *Store) ListItems(params ListItemsParams) ([]*model.Item, error) {
 		query += ` INNER JOIN feeds ON items.feed_id = feeds.id`
 	}
 
-	query += ` WHERE 1=1`
+	query += ` WHERE 1=1` + itemPeriodClause(params.Period, "items")
 
 	if params.FeedID != nil {
 		query += ` AND items.feed_id = :feed_id`
@@ -167,8 +167,7 @@ func (s *Store) BatchCreateItemsIgnore(feedID int64, inputs []BatchCreateItemInp
 	}
 	defer tx.Rollback()
 	var allowedJSON string
-	var maxAge int64
-	if err = tx.QueryRow(`SELECT allowed_categories,max_age_days FROM feeds WHERE id=:id`, sql.Named("id", feedID)).Scan(&allowedJSON, &maxAge); err != nil {
+	if err = tx.QueryRow(`SELECT allowed_categories FROM feeds WHERE id=:id`, sql.Named("id", feedID)).Scan(&allowedJSON); err != nil {
 		return 0, err
 	}
 	var allowed []string
@@ -187,7 +186,6 @@ func (s *Store) BatchCreateItemsIgnore(feedID int64, inputs []BatchCreateItemInp
 	}
 	defer metadata.Close()
 	created := 0
-	now := time.Now().Unix()
 	for _, input := range inputs {
 		categories := input.Categories
 		if categories == nil {
@@ -200,9 +198,6 @@ func (s *Store) BatchCreateItemsIgnore(feedID int64, inputs []BatchCreateItemInp
 		// Refresh policy metadata without replacing content or read state on existing rows.
 		if _, err = metadata.Exec(sql.Named("categories", string(encoded)), sql.Named("feed_id", feedID), sql.Named("guid", input.GUID)); err != nil {
 			return 0, err
-		}
-		if maxAge > 0 && (input.PubDate < now-maxAge*86400 || input.PubDate > now) {
-			continue
 		}
 		matches := len(allowed) == 0
 		for _, category := range categories {
@@ -289,10 +284,10 @@ func (s *Store) batchUpdateItemsUnreadChunk(ids []int64, unread bool) error {
 // If feedID is non-nil, only marks items from that specific feed.
 func (s *Store) MarkAllAsRead(feedID *int64) error {
 	if feedID != nil {
-		_, err := s.db.Exec(`UPDATE items SET unread = 0 WHERE id IN (SELECT id FROM visible_items) AND feed_id = :feed_id`, sql.Named("feed_id", *feedID))
+		_, err := s.db.Exec(`UPDATE items SET unread = 0 WHERE id IN (SELECT id FROM eligible_items) AND feed_id = :feed_id`, sql.Named("feed_id", *feedID))
 		return err
 	}
-	_, err := s.db.Exec(`UPDATE items SET unread = 0 WHERE id IN (SELECT id FROM visible_items)`)
+	_, err := s.db.Exec(`UPDATE items SET unread = 0 WHERE id IN (SELECT id FROM eligible_items)`)
 	return err
 }
 
@@ -300,7 +295,7 @@ func (s *Store) MarkGroupAsRead(groupID int64) error {
 	_, err := s.db.Exec(`
 		UPDATE items
 		SET unread = 0
-		WHERE id IN (SELECT id FROM visible_items) AND feed_id IN (
+		WHERE id IN (SELECT id FROM eligible_items) AND feed_id IN (
 			SELECT id
 			FROM feeds
 			WHERE group_id = :group_id
@@ -313,7 +308,7 @@ func (s *Store) MarkFeedAsReadBefore(feedID, before int64) error {
 	_, err := s.db.Exec(`
 		UPDATE items
 		SET unread = 0
-		WHERE id IN (SELECT id FROM visible_items) AND feed_id = :feed_id
+		WHERE id IN (SELECT id FROM eligible_items) AND feed_id = :feed_id
 		  AND (CASE WHEN pub_date > 0 THEN pub_date ELSE created_at END) <= :before
 	`, sql.Named("feed_id", feedID), sql.Named("before", before))
 	return err
@@ -323,7 +318,7 @@ func (s *Store) MarkGroupAsReadBefore(groupID, before int64) error {
 	_, err := s.db.Exec(`
 		UPDATE items
 		SET unread = 0
-		WHERE id IN (SELECT id FROM visible_items) AND feed_id IN (
+		WHERE id IN (SELECT id FROM eligible_items) AND feed_id IN (
 			SELECT id
 			FROM feeds
 			WHERE group_id = :group_id
@@ -337,7 +332,7 @@ func (s *Store) MarkAllAsReadBefore(before int64) error {
 	_, err := s.db.Exec(`
 		UPDATE items
 		SET unread = 0
-		WHERE id IN (SELECT id FROM visible_items) AND (CASE WHEN pub_date > 0 THEN pub_date ELSE created_at END) <= :before
+		WHERE id IN (SELECT id FROM eligible_items) AND (CASE WHEN pub_date > 0 THEN pub_date ELSE created_at END) <= :before
 	`, sql.Named("before", before))
 	return err
 }
@@ -345,7 +340,7 @@ func (s *Store) MarkAllAsReadBefore(before int64) error {
 func (s *Store) ListUnreadItemIDs() ([]int64, error) {
 	rows, err := s.db.Query(`
 		SELECT id
-		FROM visible_items
+		FROM eligible_items
 		WHERE unread = 1
 		ORDER BY id
 	`)
@@ -377,7 +372,7 @@ type ListFeverItemsParams struct {
 func (s *Store) ListFeverItems(params ListFeverItemsParams) ([]*model.Item, error) {
 	query := `
 		SELECT id, feed_id, guid, title, link, content, pub_date, unread, created_at, categories
-		FROM visible_items
+		FROM eligible_items
 		WHERE 1=1
 	`
 	args := []any{}
@@ -452,21 +447,25 @@ type SearchItemResult struct {
 }
 
 func (s *Store) SearchItems(query string, limit int) ([]*SearchItemResult, error) {
+	return s.SearchItemsInPeriod(query, limit, "")
+}
+
+func (s *Store) SearchItemsInPeriod(query string, limit int, period string) ([]*SearchItemResult, error) {
 	ftsQuery := buildFTSQuery(query)
 	if ftsQuery == "" {
-		return s.searchItemsLike(query, limit)
+		return s.searchItemsLike(query, limit, period)
 	}
 
 	rows, err := s.db.Query(`
 		SELECT i.id, i.feed_id, i.title, i.pub_date
 		FROM items_fts
-		INNER JOIN visible_items i ON i.id = items_fts.rowid
-		WHERE items_fts MATCH :query
+		INNER JOIN eligible_items i ON i.id = items_fts.rowid
+		WHERE items_fts MATCH :query `+itemPeriodClause(period, "i")+`
 		ORDER BY i.pub_date DESC, i.id DESC
 		LIMIT :limit
 	`, sql.Named("query", ftsQuery), sql.Named("limit", limit))
 	if err != nil {
-		return s.searchItemsLike(query, limit)
+		return s.searchItemsLike(query, limit, period)
 	}
 	defer rows.Close()
 
@@ -500,11 +499,11 @@ func buildFTSQuery(query string) string {
 	return strings.Join(terms, " AND ")
 }
 
-func (s *Store) searchItemsLike(query string, limit int) ([]*SearchItemResult, error) {
+func (s *Store) searchItemsLike(query string, limit int, period string) ([]*SearchItemResult, error) {
 	rows, err := s.db.Query(`
 		SELECT id, feed_id, title, pub_date
-		FROM visible_items
-		WHERE title LIKE :query OR content LIKE :query
+		FROM eligible_items
+		WHERE (title LIKE :query OR content LIKE :query) `+itemPeriodClause(period, "eligible_items")+`
 		ORDER BY pub_date DESC, id DESC
 		LIMIT :limit
 	`, sql.Named("query", "%"+query+"%"), sql.Named("limit", limit))
@@ -526,14 +525,14 @@ func (s *Store) searchItemsLike(query string, limit int) ([]*SearchItemResult, e
 
 // CountItems returns the total count of items matching the filter criteria.
 func (s *Store) CountItems(params ListItemsParams) (int, error) {
-	query := `SELECT COUNT(*) FROM visible_items AS items`
+	query := `SELECT COUNT(*) FROM eligible_items AS items`
 	args := []any{}
 
 	if params.GroupID != nil {
 		query += ` INNER JOIN feeds ON items.feed_id = feeds.id`
 	}
 
-	query += ` WHERE 1=1`
+	query += ` WHERE 1=1` + itemPeriodClause(params.Period, "items")
 
 	if params.FeedID != nil {
 		query += ` AND items.feed_id = :feed_id`
@@ -551,4 +550,17 @@ func (s *Store) CountItems(params ListItemsParams) (int, error) {
 	var count int
 	err := s.db.QueryRow(query, args...).Scan(&count)
 	return count, err
+}
+
+// itemPeriodClause keeps recent and older views disjoint at the rolling boundary.
+func itemPeriodClause(period, table string) string {
+	date := table + ".pub_date"
+	switch period {
+	case "recent":
+		return " AND " + date + " >= unixepoch()-90*86400 AND " + date + " <= unixepoch()"
+	case "older":
+		return " AND " + date + " < unixepoch()-90*86400"
+	default:
+		return ""
+	}
 }

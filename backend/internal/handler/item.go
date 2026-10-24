@@ -18,7 +18,12 @@ type markItemsReadRequest struct {
 }
 
 func (h *Handler) listItems(c *gin.Context) {
-	params := store.ListItemsParams{}
+	period := c.DefaultQuery("period", "recent")
+	if period != "recent" && period != "older" {
+		badRequestError(c, "invalid period")
+		return
+	}
+	params := store.ListItemsParams{Period: period}
 
 	if feedID := c.Query("feed_id"); feedID != "" {
 		id, err := strconv.ParseInt(feedID, 10, 64)
@@ -102,7 +107,14 @@ func (h *Handler) listItems(c *gin.Context) {
 		nc := fmt.Sprintf("%d_%d", last.PubDate, last.ID)
 		nextCursor = &nc
 	}
-	paginatedListResponse(c, items, total, nextCursor)
+	olderParams := params
+	olderParams.Period = "older"
+	olderTotal, err := h.store.CountItems(olderParams)
+	if err != nil {
+		internalError(c, err, "count older items")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": items, "total": total, "next_cursor": nextCursor, "older_total": olderTotal})
 }
 
 func (h *Handler) getItem(c *gin.Context) {

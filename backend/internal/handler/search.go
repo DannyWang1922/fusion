@@ -33,7 +33,12 @@ func (h *Handler) search(c *gin.Context) {
 		return
 	}
 
-	items, err := h.store.SearchItems(q, limit)
+	period := c.DefaultQuery("period", "recent")
+	if period != "recent" && period != "older" && period != "all" {
+		badRequestError(c, "invalid period")
+		return
+	}
+	items, err := h.store.SearchItemsInPeriod(q, limit, period)
 	if err != nil {
 		internalError(c, err, "search items")
 		return

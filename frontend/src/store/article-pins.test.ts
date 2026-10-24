@@ -22,6 +22,10 @@ describe("articleListKey", () => {
     );
   });
 
+  it("keeps recent and historical undo pins separate", () => {
+    expect(articleListKey(1, null, "unread", "recent")).not.toBe(articleListKey(1, null, "unread", "older"));
+  });
+
   it("treats null and 0 as the same dimension value", () => {
     expect(articleListKey(null, null, "all")).toBe(
       articleListKey(0, 0, "all"),

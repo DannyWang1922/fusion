@@ -28,6 +28,8 @@ export function ArticleList() {
   const navigate = useNavigate();
   const {
     articleFilter,
+    articlePeriod,
+    setArticlePeriod,
     setArticleFilter,
     selectedFeedId,
     selectedGroupId,
@@ -37,6 +39,7 @@ export function ArticleList() {
 
   const {
     articles,
+    olderTotal,
     hasMore,
     isLoading,
     isLoadingMore,
@@ -47,6 +50,7 @@ export function ArticleList() {
     feedId: selectedFeedId,
     groupId: selectedGroupId,
     articleFilter,
+    period: articlePeriod,
   });
 
   const { data: groups = [] } = useGroups();
@@ -60,9 +64,10 @@ export function ArticleList() {
     feedId: selectedFeedId,
     groupId: selectedGroupId,
     articleFilter,
+    period: articlePeriod,
   });
 
-  const pinsKey = articleListKey(selectedFeedId, selectedGroupId, articleFilter);
+  const pinsKey = articleListKey(selectedFeedId, selectedGroupId, articleFilter, articlePeriod);
   const clearPins = useArticlePinsStore((s) => s.clearPins);
 
   // Leaving this exact list (filter/feed/group change or unmount) commits the
@@ -179,7 +184,7 @@ export function ArticleList() {
       {/* Article area with filter tabs */}
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-4 py-4 sm:px-6">
         {/* Filter tabs - hidden when no articles exist */}
-        {!hasNoFeeds && (articles.length > 0 || articleFilter !== "all") && (
+        {!hasNoFeeds && (
           <Tabs
             value={articleFilter}
             onValueChange={(v) => setArticleFilter(v as ArticleFilter)}
@@ -194,8 +199,15 @@ export function ArticleList() {
           </Tabs>
         )}
 
-            {/* Article list */}
-        <ScrollArea className="min-h-0 flex-1">
+            {!hasNoFeeds && <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+          <span>{articleFilter === "starred" ? t("article.period.bookmarks") : articlePeriod === "older" ? t("article.period.older") : t("article.period.recent")}</span>
+          {articleFilter !== "starred" && articlePeriod === "older" && <Button variant="ghost" size="sm" onClick={() => setArticlePeriod("recent")}>
+            {t("article.period.back")}
+          </Button>}
+        </div>}
+
+        {/* Article list */}
+        <ScrollArea key={`${selectedFeedId}:${selectedGroupId}:${articleFilter}:${articlePeriod}`} className="min-h-0 flex-1">
           <div>
             {isLoading || (articles.length === 0 && hasMore) ? (
               <div className="space-y-2 p-2">
@@ -223,7 +235,7 @@ export function ArticleList() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <p className="text-sm text-muted-foreground">
-                    {t("article.list.noArticles")}
+                    {articleFilter === "starred" ? t("article.list.noArticles") : articlePeriod === "older" ? t("article.period.noOlder") : t("article.period.noRecent")}
                   </p>
                 </div>
               )
@@ -269,6 +281,13 @@ export function ArticleList() {
                   </div>
                 )}
               </>
+            )}
+            {!isLoading && articleFilter !== "starred" && articlePeriod === "recent" && olderTotal > 0 && (
+              <div className="flex justify-center border-t py-5">
+                <Button variant="outline" size="sm" onClick={() => setArticlePeriod("older")}>
+                  {t("article.period.showOlder", { count: olderTotal })}
+                </Button>
+              </div>
             )}
           </div>
         </ScrollArea>

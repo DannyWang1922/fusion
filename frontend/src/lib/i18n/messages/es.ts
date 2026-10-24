@@ -1,15 +1,21 @@
 import type { PartialMessages } from "./types";
 
 export const esMessages: PartialMessages = {
+  "article.period.recent": "Last 90 days",
+  "article.period.older": "Articles older than 90 days",
+  "article.period.back": "Back to last 90 days",
+  "article.period.showOlder": "View older articles ({count})",
+  "article.period.noRecent": "No articles in the last 90 days.",
+  "article.period.noOlder": "No older articles in this view.",
+  "article.period.bookmarks": "Saved articles from all dates",
+  "search.includeOlder": "Include articles older than 90 days",
+
   "fullContent.cached": "Full article saved locally.",
   "fullContent.failed": "Could not load the full article. You can read the RSS summary or open the original.",
   "fullContent.retry": "Retry full article",
   "fullContent.loading": "Fetching full article. A separate Chrome window will close automatically.",
   "feed.filter.categories": "Allowed RSS categories",
   "feed.filter.categoriesHint": "Comma-separated, case-sensitive. Empty shows all categories. Other articles are hidden, not deleted.",
-  "feed.filter.age": "Show the last N days",
-  "feed.filter.ageHint": "0 shows all dates. This rolling window applies to lists, counts and search.",
-  "feed.filter.invalidAge": "Enter a whole number between 0 and 3650.",
   "feed.filter.fullContent": "Fetch full article when opened",
   "feed.filter.fullContentHint": "Supports OpenAI articles. Requires local Node.js and Chrome; caches the body for reading and translation.",
 

@@ -11,6 +11,8 @@ import {
 } from "@/lib/article-filter";
 import { parsePositiveIntegerParam } from "@/lib/route-params";
 
+import type { ArticlePeriod } from "@/lib/api/types";
+
 export type { ArticleFilter } from "@/lib/article-filter";
 
 export function useUrlState() {
@@ -33,16 +35,19 @@ export function useUrlState() {
   const selectedFeedId = routeFeedId;
   const selectedGroupId = routeGroupId;
   const articleFilter = routeFilter;
+  const articlePeriod: ArticlePeriod = search.period === "older" ? "older" : "recent";
 
   const navigateToList = useCallback(
     ({
       filter,
+      period,
       feedId,
       groupId,
       articleId,
       replace,
     }: {
       filter?: ArticleFilter;
+      period?: ArticlePeriod;
       feedId?: number | null;
       groupId?: number | null;
       articleId?: number | null;
@@ -52,7 +57,8 @@ export function useUrlState() {
       const nextFeedId = feedId === undefined ? selectedFeedId : feedId;
       const nextGroupId = groupId === undefined ? selectedGroupId : groupId;
       const nextArticleId = articleId === undefined ? selectedArticleId : articleId;
-      const nextSearch = { article: nextArticleId ?? undefined };
+      const nextPeriod = period ?? articlePeriod;
+      const nextSearch = { article: nextArticleId ?? undefined, period: nextPeriod === "older" ? "older" : undefined };
 
       if (nextGroupId !== null) {
         navigate({
@@ -89,6 +95,7 @@ export function useUrlState() {
     },
     [
       articleFilter,
+      articlePeriod,
       navigate,
       selectedArticleId,
       selectedFeedId,
@@ -100,6 +107,7 @@ export function useUrlState() {
     (feedId: number | null) => {
       navigateToList({
         feedId,
+        period: "recent",
         groupId: null,
         articleId: null,
       });
@@ -111,6 +119,7 @@ export function useUrlState() {
     (groupId: number | null) => {
       navigateToList({
         groupId,
+        period: "recent",
         feedId: null,
         articleId: null,
       });
@@ -119,7 +128,7 @@ export function useUrlState() {
   );
 
   const setSelectedArticle = useCallback(
-    (articleId: number | null) => {
+    (articleId: number | null, period?: ArticlePeriod) => {
       if (articleId === null) {
         navigateToList({ articleId: null, replace: true });
         return;
@@ -127,6 +136,7 @@ export function useUrlState() {
 
       navigateToList({
         articleId,
+        period,
         replace: selectedArticleId !== null,
       });
     },
@@ -137,16 +147,22 @@ export function useUrlState() {
     (filter: ArticleFilter) => {
       navigateToList({
         filter,
+        period: filter === "starred" || articleFilter === "starred" ? "recent" : articlePeriod,
         articleId: null,
       });
     },
-    [navigateToList],
+    [navigateToList, articleFilter, articlePeriod],
   );
+
+  const setArticlePeriod = useCallback((period: ArticlePeriod) => {
+    navigateToList({ period, articleId: null });
+  }, [navigateToList]);
 
   const selectTopLevelFilter = useCallback(
     (filter: ArticleFilter) => {
       navigateToList({
         filter,
+        period: "recent",
         feedId: null,
         groupId: null,
         articleId: null,
@@ -164,6 +180,8 @@ export function useUrlState() {
     selectedGroupId,
     selectedArticleId,
     articleFilter,
+    articlePeriod,
+    setArticlePeriod,
     setSelectedFeed,
     setSelectedGroup,
     setSelectedArticle,

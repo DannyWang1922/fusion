@@ -11,7 +11,6 @@ type Group struct {
 // Feed represents an RSS/Atom feed.
 type Feed struct {
 	AllowedCategories      []string `json:"allowed_categories"`
-	MaxAgeDays             int64    `json:"max_age_days"`
 	FetchFullContent       bool     `json:"fetch_full_content"`
 	ID                     int64    `json:"id"`
 	GroupID                int64    `json:"group_id"`

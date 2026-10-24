@@ -30,48 +30,46 @@ func TestReadingPolicyPreservesHiddenItemsAndReadState(t *testing.T) {
 		}
 	}
 	allowed := []string{"Research", "Publication"}
-	days := int64(90)
-	if err := s.UpdateFeed(feed.ID, UpdateFeedParams{AllowedCategories: &allowed, MaxAgeDays: &days}); err != nil {
+	if err := s.UpdateFeed(feed.ID, UpdateFeedParams{AllowedCategories: &allowed}); err != nil {
 		t.Fatal(err)
 	}
-	rows, err := s.ListItems(ListItemsParams{FeedID: &feed.ID})
+	rows, err := s.ListItems(ListItemsParams{FeedID: &feed.ID, Period: "recent"})
 	if err != nil || len(rows) != 1 || rows[0].GUID != "selected" {
 		t.Fatalf("visible list: %+v %v", rows, err)
 	}
-	if count, err := s.CountItems(ListItemsParams{GroupID: &group.ID}); err != nil || count != 1 {
+	if count, err := s.CountItems(ListItemsParams{GroupID: &group.ID, Period: "recent"}); err != nil || count != 1 {
 		t.Fatalf("count: %d %v", count, err)
 	}
 	feeds, err := s.ListFeeds()
 	if err != nil || feeds[0].ItemCount != 1 || feeds[0].UnreadCount != 1 {
 		t.Fatalf("feed counts: %+v %v", feeds, err)
 	}
-	search, err := s.SearchItems("policy", 100)
+	search, err := s.SearchItemsInPeriod("policy", 100, "recent")
 	if err != nil || len(search) != 1 {
 		t.Fatalf("search: %+v %v", search, err)
 	}
 	ids, err := s.ListUnreadItemIDs()
-	if err != nil || len(ids) != 1 {
+	if err != nil || len(ids) != 3 {
 		t.Fatalf("unread IDs: %v %v", ids, err)
 	}
 	fever, err := s.ListFeverItems(ListFeverItemsParams{})
-	if err != nil || len(fever) != 1 {
+	if err != nil || len(fever) != 3 {
 		t.Fatalf("fever: %v %v", fever, err)
 	}
-	if err := s.MarkAllAsRead(nil); err != nil {
+	if err := s.BatchUpdateItemsUnread([]int64{rows[0].ID}, false); err != nil {
 		t.Fatal(err)
 	}
-	// Existing metadata can be backfilled, but out-of-scope new rows are skipped.
-	inputs = append(inputs, BatchCreateItemInput{GUID: "new-rejected", PubDate: now, Categories: []string{"Company"}}, BatchCreateItemInput{GUID: "new-selected", PubDate: now, Categories: []string{"Publication"}})
-	if n, err := s.BatchCreateItemsIgnore(feed.ID, inputs); err != nil || n != 1 {
+	// Category restrictions still apply, while matching historical rows are retained.
+	inputs = append(inputs, BatchCreateItemInput{GUID: "new-rejected", PubDate: now, Categories: []string{"Company"}}, BatchCreateItemInput{GUID: "new-selected", PubDate: now, Categories: []string{"Publication"}}, BatchCreateItemInput{GUID: "new-old", PubDate: now - 120*86400, Categories: []string{"Research"}})
+	if n, err := s.BatchCreateItemsIgnore(feed.ID, inputs); err != nil || n != 2 {
 		t.Fatalf("filtered ingest: %d %v", n, err)
 	}
 	empty := []string{}
-	zero := int64(0)
-	if err := s.UpdateFeed(feed.ID, UpdateFeedParams{AllowedCategories: &empty, MaxAgeDays: &zero}); err != nil {
+	if err := s.UpdateFeed(feed.ID, UpdateFeedParams{AllowedCategories: &empty}); err != nil {
 		t.Fatal(err)
 	}
 	rows, err = s.ListItems(ListItemsParams{FeedID: &feed.ID})
-	if err != nil || len(rows) != 6 {
+	if err != nil || len(rows) != 7 {
 		t.Fatalf("restore rows: %d %v", len(rows), err)
 	}
 	for _, item := range rows {

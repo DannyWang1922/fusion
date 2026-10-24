@@ -90,6 +90,7 @@ export const feedAPI = {
 export const itemAPI = {
   list: (params?: ListItemsParams) => {
     const query = new URLSearchParams();
+    if (params?.period) query.set("period", params.period);
     if (params?.feed_id) query.set("feed_id", params.feed_id.toString());
     if (params?.group_id) query.set("group_id", params.group_id.toString());
     if (params?.unread !== undefined)
@@ -148,9 +149,9 @@ export const settingsAPI = {
 
 // Search APIs
 export const searchAPI = {
-  search: (q: string, limit = 10) =>
+  search: (q: string, limit = 10, includeOlder = false) =>
     api.get<APIResponse<SearchResponse>>(
-      `/search?q=${encodeURIComponent(q)}&limit=${limit}`,
+      `/search?q=${encodeURIComponent(q)}&limit=${limit}&period=${includeOlder ? "all" : "recent"}`,
     ),
 };
 

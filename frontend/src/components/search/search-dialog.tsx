@@ -36,6 +36,7 @@ export function SearchDialog() {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [includeOlder, setIncludeOlder] = useState(false);
   const [feeds, setFeeds] = useState<SearchFeed[]>([]);
   const [items, setItems] = useState<SearchItem[]>([]);
 
@@ -48,16 +49,18 @@ export function SearchDialog() {
     return () => clearTimeout(timer);
   }, [query]);
 
+  useEffect(() => { if (!isSearchOpen) setIncludeOlder(false); }, [isSearchOpen]);
+
   // Fetch search results from backend
   useEffect(() => {
-    if (!debouncedQuery) {
+    if (!isSearchOpen || !debouncedQuery) {
       return;
     }
 
     let cancelled = false;
 
     searchAPI
-      .search(debouncedQuery)
+      .search(debouncedQuery, 10, includeOlder)
       .then((res) => {
         if (cancelled) return;
         setFeeds(res.data?.feeds ?? []);
@@ -75,7 +78,7 @@ export function SearchDialog() {
     return () => {
       cancelled = true;
     };
-  }, [debouncedQuery]);
+  }, [debouncedQuery, includeOlder, isSearchOpen]);
 
   const handleSelectFeed = (feedId: number) => {
     setSelectedFeed(feedId);
@@ -91,8 +94,8 @@ export function SearchDialog() {
     }
   };
 
-  const handleSelectArticle = (articleId: number) => {
-    setSelectedArticle(articleId);
+  const handleSelectArticle = (article: SearchItem) => {
+    setSelectedArticle(article.id, article.pub_date < Date.now()/1000-90*86400 ? "older" : "recent");
     setSearchOpen(false);
   };
 
@@ -103,6 +106,7 @@ export function SearchDialog() {
       setFeeds([]);
       setItems([]);
       setLoading(false);
+      setIncludeOlder(false);
     }
     setSearchOpen(open);
   };
@@ -128,6 +132,10 @@ export function SearchDialog() {
             value={query}
             onValueChange={setQuery}
           />
+          <label className="flex items-center gap-2 border-b px-4 py-2 text-xs text-muted-foreground">
+            <input type="checkbox" checked={includeOlder} onChange={(event) => { setLoading(!!debouncedQuery); setIncludeOlder(event.target.checked); }} />
+            {t("search.includeOlder")}
+          </label>
           <CommandList>
             {loading && debouncedQuery && (
               <div className="flex items-center justify-center py-6">
@@ -179,7 +187,7 @@ export function SearchDialog() {
                     <CommandItem
                       key={`article-${article.id}`}
                       value={`article-${article.id}`}
-                      onSelect={() => handleSelectArticle(article.id)}
+                      onSelect={() => handleSelectArticle(article)}
                       className="flex-col items-start gap-1"
                     >
                       <div className="flex w-full items-center gap-2">

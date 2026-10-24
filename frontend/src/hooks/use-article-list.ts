@@ -6,13 +6,14 @@ import {
   useStarredItems,
 } from "@/queries/bookmarks";
 import { useArticlePinsStore, articleListKey } from "@/store";
-import type { Bookmark, Item } from "@/lib/api";
+import type { ArticlePeriod, Bookmark, Item } from "@/lib/api";
 import type { ArticleFilter } from "@/lib/article-filter";
 
 interface ArticleListFilters {
   feedId: number | null;
   groupId: number | null;
   articleFilter: ArticleFilter;
+  period?: ArticlePeriod;
 }
 
 export function useArticleList(filters: ArticleListFilters) {
@@ -23,6 +24,7 @@ export function useArticleList(filters: ArticleListFilters) {
   // skip the request entirely.
   const itemsQuery = useItems(
     {
+      period: filters.period,
       feedId: filters.feedId,
       groupId: filters.groupId,
       unread: isUnreadMode ? true : undefined,
@@ -45,6 +47,7 @@ export function useArticleList(filters: ArticleListFilters) {
     filters.feedId,
     filters.groupId,
     filters.articleFilter,
+    filters.period,
   );
   const pinnedIds = useArticlePinsStore((s) => s.pins[pinsKey]);
 
@@ -91,6 +94,7 @@ export function useArticleList(filters: ArticleListFilters) {
 
   return {
     articles,
+    olderTotal: itemsQuery.data?.pages[0]?.older_total ?? 0,
     hasMore: isStarredMode ? starred.hasNextPage : itemsQuery.hasNextPage,
     isLoading: isStarredMode ? starred.isLoading : itemsQuery.isLoading,
     isLoadingMore: isStarredMode

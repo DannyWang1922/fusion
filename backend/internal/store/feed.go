@@ -15,7 +15,7 @@ import (
 // feed read. ListFeeds appends the two item-count aggregates on top of it.
 const feedSelectColumns = `f.id, f.group_id, f.name, f.link, f.site_url,
 	       f.suspended, f.proxy, f.refresh_interval_seconds, f.created_at, f.updated_at,
-	       f.allowed_categories, f.max_age_days, f.fetch_full_content,
+	       f.allowed_categories, f.fetch_full_content,
 	       COALESCE(fs.etag, ''), COALESCE(fs.last_modified, ''), COALESCE(fs.cache_control, ''),
 	       COALESCE(fs.expires_at, 0), COALESCE(fs.last_checked_at, 0), COALESCE(fs.next_check_at, 0),
 	       COALESCE(fs.last_http_status, 0), COALESCE(fs.retry_after_until, 0), COALESCE(fs.last_success_at, 0),
@@ -43,7 +43,7 @@ func scanFeed(row rowScanner, withCounts bool) (*model.Feed, error) {
 		&refreshIntervalSeconds,
 		&f.CreatedAt,
 		&f.UpdatedAt,
-		&categories, &f.MaxAgeDays, &fetchFullContent,
+		&categories, &fetchFullContent,
 		&f.FetchState.ETag,
 		&f.FetchState.LastModified,
 		&f.FetchState.CacheControl,
@@ -84,7 +84,7 @@ func (s *Store) ListFeeds() ([]*model.Feed, error) {
 		LEFT JOIN visible_items i ON i.feed_id = f.id
 		GROUP BY f.id, f.group_id, f.name, f.link, f.site_url,
 		         f.suspended, f.proxy, f.refresh_interval_seconds, f.created_at, f.updated_at,
-	       f.allowed_categories, f.max_age_days, f.fetch_full_content,
+	       f.allowed_categories, f.fetch_full_content,
 		         fs.etag, fs.last_modified, fs.cache_control, fs.expires_at, fs.last_checked_at,
 		         fs.next_check_at, fs.last_http_status, fs.retry_after_until, fs.last_success_at,
 		         fs.last_error_at, fs.last_error, fs.consecutive_failures
@@ -238,7 +238,6 @@ func (s *Store) SearchFeeds(query string) ([]*SearchFeedResult, error) {
 // Pointer fields distinguish between "not set" (nil) and "set to zero value" (e.g., &false).
 type UpdateFeedParams struct {
 	AllowedCategories *[]string
-	MaxAgeDays        *int64
 	FetchFullContent  *bool
 	GroupID           *int64
 	Name              *string
@@ -294,13 +293,6 @@ func (s *Store) UpdateFeed(id int64, params UpdateFeedParams) error {
 		setClauses = append(setClauses, "allowed_categories = :allowed_categories")
 		args = append(args, sql.Named("allowed_categories", string(encoded)))
 	}
-	if params.MaxAgeDays != nil {
-		if *params.MaxAgeDays < 0 || *params.MaxAgeDays > 3650 {
-			return fmt.Errorf("invalid max age")
-		}
-		setClauses = append(setClauses, "max_age_days = :max_age_days")
-		args = append(args, sql.Named("max_age_days", *params.MaxAgeDays))
-	}
 	if params.FetchFullContent != nil {
 		setClauses = append(setClauses, "fetch_full_content = :fetch_full_content")
 		args = append(args, sql.Named("fetch_full_content", boolToInt(*params.FetchFullContent)))
@@ -337,7 +329,7 @@ func (s *Store) UpdateFeed(id int64, params UpdateFeedParams) error {
 		return fmt.Errorf("%w: feed", ErrNotFound)
 	}
 
-	if params.Link != nil || params.AllowedCategories != nil || params.MaxAgeDays != nil {
+	if params.Link != nil || params.AllowedCategories != nil {
 		if _, err := tx.Exec(`
 			INSERT INTO feed_fetch_state (
 				feed_id,

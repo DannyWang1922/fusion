@@ -8,7 +8,6 @@ export interface Group {
 
 export interface Feed {
  allowed_categories?: string[];
- max_age_days?: number;
  fetch_full_content?: boolean;
   id: number;
   group_id: number;
@@ -100,6 +99,7 @@ export interface ListResponse<T> {
 
 // Item and bookmark lists: cursor-paginated (see docs/api-conventions.md)
 export interface PaginatedListResponse<T> {
+  older_total?: number;
   data: T[];
   total: number;
   next_cursor: string | null;
@@ -129,7 +129,6 @@ export interface CreateFeedRequest {
 
 export interface UpdateFeedRequest {
  allowed_categories?: string[];
- max_age_days?: number;
  fetch_full_content?: boolean;
   group_id?: number;
   name?: string;
@@ -171,7 +170,10 @@ export interface MarkItemsReadRequest {
   ids: number[];
 }
 
+export type ArticlePeriod = "recent" | "older";
+
 export interface ListItemsParams {
+  period?: ArticlePeriod;
   feed_id?: number;
   group_id?: number;
   unread?: boolean;

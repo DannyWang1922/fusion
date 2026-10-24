@@ -29,7 +29,6 @@ type createFeedRequest struct {
 
 type updateFeedRequest struct {
 	AllowedCategories      *[]string `json:"allowed_categories"`
-	MaxAgeDays             *int64    `json:"max_age_days"`
 	FetchFullContent       *bool     `json:"fetch_full_content"`
 	GroupID                *int64    `json:"group_id"`
 	Name                   *string   `json:"name"`
@@ -188,11 +187,7 @@ func (h *Handler) updateFeed(c *gin.Context) {
 		return
 	}
 
-	params := store.UpdateFeedParams{MaxAgeDays: req.MaxAgeDays, FetchFullContent: req.FetchFullContent}
-	if req.MaxAgeDays != nil && (*req.MaxAgeDays < 0 || *req.MaxAgeDays > 3650) {
-		badRequestError(c, "max_age_days must be between 0 and 3650")
-		return
-	}
+	params := store.UpdateFeedParams{FetchFullContent: req.FetchFullContent}
 	if req.AllowedCategories != nil {
 		if len(*req.AllowedCategories) > 50 {
 			badRequestError(c, "too many categories")

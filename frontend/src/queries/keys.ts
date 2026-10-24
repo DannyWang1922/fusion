@@ -1,10 +1,14 @@
+import type { ArticlePeriod } from "@/lib/api/types";
+
 export interface ItemFilters {
+  period?: ArticlePeriod;
   feedId?: number | null;
   groupId?: number | null;
   unread?: boolean;
 }
 
 export interface NormalizedItemFilters {
+  period: ArticlePeriod;
   feedId: number | null;
   groupId: number | null;
   unread: boolean;
@@ -14,6 +18,7 @@ export function normalizeItemFilters(
   filters: ItemFilters,
 ): NormalizedItemFilters {
   return {
+    period: filters.period ?? "recent",
     feedId: filters.feedId ?? null,
     groupId: filters.groupId ?? null,
     unread: filters.unread ?? false,

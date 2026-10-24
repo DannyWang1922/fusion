@@ -1,15 +1,21 @@
 import type { PartialMessages } from "./types";
 
 export const zhMessages: PartialMessages = {
+  "article.period.recent": "近 90 天",
+  "article.period.older": "90 天前的文章",
+  "article.period.back": "返回近 90 天",
+  "article.period.showOlder": "查看更早文章（{count} 篇）",
+  "article.period.noRecent": "近 90 天暂无文章。",
+  "article.period.noOlder": "当前范围内没有更早的文章。",
+  "article.period.bookmarks": "收藏保留全部时间的文章",
+  "search.includeOlder": "包含 90 天前的文章",
+
   "fullContent.cached": "全文已缓存到本地。",
   "fullContent.failed": "全文抓取失败。你仍可阅读 RSS 摘要，或打开原文。",
   "fullContent.retry": "重新抓取全文",
   "fullContent.loading": "正在抓取全文，独立 Chrome 窗口会在完成后自动关闭。",
   "feed.filter.categories": "保留的 RSS 分类",
   "feed.filter.categoriesHint": "用英文逗号分隔，区分大小写。留空显示全部分类。其他文章只隐藏，不删除。",
-  "feed.filter.age": "只看最近多少天",
-  "feed.filter.ageHint": "0 表示不限时间。按滚动天数筛选列表、计数和搜索。",
-  "feed.filter.invalidAge": "请输入 0 至 3650 之间的整数。",
   "feed.filter.fullContent": "打开文章时抓取全文",
   "feed.filter.fullContentHint": "目前支持 OpenAI 文章。需要本机 Node.js 和 Chrome，正文会缓存在本地，供阅读和翻译使用。",
 

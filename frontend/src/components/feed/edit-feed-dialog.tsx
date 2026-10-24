@@ -56,7 +56,6 @@ export function EditFeedDialog() {
   const [groupId, setGroupId] = useState<string>("");
   const [proxy, setProxy] = useState("");
   const [categories, setCategories] = useState("");
-  const [maxAge, setMaxAge] = useState("0");
   const [fullContent, setFullContent] = useState(false);
   const [suspended, setSuspended] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState<string>("");
@@ -88,13 +87,12 @@ export function EditFeedDialog() {
       setProxy(editingFeed.proxy ?? "");
       setSuspended(editingFeed.suspended);
       setCategories((editingFeed.allowed_categories ?? []).join(", "));
-      setMaxAge(String(editingFeed.max_age_days ?? 0));
       setFullContent(!!editingFeed.fetch_full_content);
       // NULL (or a legacy 0) stays "untouched" (empty): the Select shows the
       // live global fallback, and an untouched save sends nothing.
       const stored = editingFeed.refresh_interval_seconds;
       setRefreshInterval(stored && stored > 0 ? stored.toString() : "");
-      setIsAdvancedOpen(!!editingFeed.proxy || stored != null || !!editingFeed.max_age_days || !!editingFeed.fetch_full_content || !!editingFeed.allowed_categories?.length);
+      setIsAdvancedOpen(!!editingFeed.proxy || stored != null || !!editingFeed.fetch_full_content || !!editingFeed.allowed_categories?.length);
       setIsMobileErrorTooltipOpen(false);
     }
   }, [editingFeed]);
@@ -106,7 +104,6 @@ export function EditFeedDialog() {
     setProxy("");
     setSuspended(false);
     setCategories("");
-    setMaxAge("0");
     setFullContent(false);
     setRefreshInterval("");
     setIsAdvancedOpen(false);
@@ -132,14 +129,11 @@ export function EditFeedDialog() {
       return;
     }
 
-    const days = Number(maxAge);
-    if (!Number.isInteger(days) || days < 0 || days > 3650) { toast.error(t("feed.filter.invalidAge")); return; }
     setIsSubmitting(true);
     try {
       const request: UpdateFeedRequest = {};
       const allowed = [...new Set(categories.split(",").map((value) => value.trim()).filter(Boolean))];
       if (JSON.stringify(allowed) !== JSON.stringify(editingFeed.allowed_categories ?? [])) request.allowed_categories = allowed;
-      if (days !== (editingFeed.max_age_days ?? 0)) request.max_age_days = days;
       if (fullContent !== !!editingFeed.fetch_full_content) request.fetch_full_content = fullContent;
 
       if (url.trim() !== editingFeed.link) {
@@ -357,11 +351,6 @@ export function EditFeedDialog() {
                   <label htmlFor="edit-feed-categories" className="text-[13px] font-medium">{t("feed.filter.categories")}</label>
                   <Input id="edit-feed-categories" value={categories} onChange={(e) => setCategories(e.target.value)} />
                   <p className="text-xs text-muted-foreground">{t("feed.filter.categoriesHint")}</p>
-                </div>
-                <div className="space-y-1.5">
-                  <label htmlFor="edit-feed-age" className="text-[13px] font-medium">{t("feed.filter.age")}</label>
-                  <Input id="edit-feed-age" type="number" min={0} max={3650} step={1} value={maxAge} onChange={(e) => setMaxAge(e.target.value)} />
-                  <p className="text-xs text-muted-foreground">{t("feed.filter.ageHint")}</p>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <div>

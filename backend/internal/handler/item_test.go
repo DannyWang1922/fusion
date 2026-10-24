@@ -75,7 +75,7 @@ func TestListItemsCursorPagination(t *testing.T) {
 	r.GET("/api/items", h.listItems)
 
 	// First page: no cursor, expect the 2 newest items and a non-null next_cursor.
-	w := performRequest(r, http.MethodGet, "/api/items?limit=2", nil, nil)
+	w := performRequest(r, http.MethodGet, "/api/items?period=older&limit=2", nil, nil)
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d (body=%s)", w.Code, w.Body.String())
 	}
@@ -105,7 +105,7 @@ func TestListItemsCursorPagination(t *testing.T) {
 	}
 
 	// Second page: use the cursor, expect the remaining item and a null next_cursor.
-	w = performRequest(r, http.MethodGet, "/api/items?limit=2&before="+*page.NextCursor, nil, nil)
+	w = performRequest(r, http.MethodGet, "/api/items?period=older&limit=2&before="+*page.NextCursor, nil, nil)
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d (body=%s)", w.Code, w.Body.String())
 	}

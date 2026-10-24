@@ -43,14 +43,16 @@ export function ArticleDrawer() {
     selectedFeedId,
     selectedGroupId,
     articleFilter,
+    articlePeriod,
   } = useUrlState();
   const { getFeedById } = useFeedLookup();
 
-  const { articles, isItemStarred, getBookmarkByItemId } =
+  const { articles, getBookmarkByItemId } =
     useArticleList({
       feedId: selectedFeedId,
       groupId: selectedGroupId,
       articleFilter,
+      period: articlePeriod,
     });
 
   const markRead = useMarkItemsRead();
@@ -62,6 +64,7 @@ export function ArticleDrawer() {
     feedId: selectedFeedId,
     groupId: selectedGroupId,
     articleFilter,
+    period: articlePeriod,
   });
 
   const articleIds = articles.map((a) => a.id);
@@ -89,7 +92,7 @@ export function ArticleDrawer() {
   const canToggleRead = readArticle !== null && readArticle.id > 0;
   const feed = article ? getFeedById(article.feed_id) : null;
   const bookmark = article ? getBookmarkByItemId(article.id) : null;
-  const starred = article ? isItemStarred(article.id) : false;
+  const starred = bookmark !== null && bookmark !== undefined;
   const safeArticleLink = article ? toSafeExternalUrl(article.link) : null;
 
   const autoMarkRead = usePreferencesStore((s) => s.autoMarkRead);

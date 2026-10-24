@@ -35,6 +35,7 @@ function buildListItemsParams(
   pageSize: number,
 ): ListItemsParams {
   const params: ListItemsParams = {
+    period: filters.period,
     limit: pageSize,
     order_by: "pub_date",
   };
@@ -109,6 +110,8 @@ function applyOptimisticItemReadState(
   const idSet = new Set(ids);
   const feedDeltaMap = new Map<number, number>();
   const updatedItemsById = new Map<number, Item>();
+  const countedIds = new Set<number>();
+  const now = Math.floor(Date.now() / 1000);
 
   qc.setQueriesData<ItemsInfiniteData>(
     { queryKey: queryKeys.items.lists() },
@@ -124,11 +127,12 @@ function applyOptimisticItemReadState(
               return item;
             }
 
-            const delta = targetUnread ? 1 : -1;
-            feedDeltaMap.set(
-              item.feed_id,
-              (feedDeltaMap.get(item.feed_id) ?? 0) + delta,
-            );
+            // Sidebar badges count recent articles once, across all cached lists.
+            if (!countedIds.has(item.id) && item.pub_date >= now - 90 * 86400 && item.pub_date <= now) {
+              countedIds.add(item.id);
+              const delta = targetUnread ? 1 : -1;
+              feedDeltaMap.set(item.feed_id, (feedDeltaMap.get(item.feed_id) ?? 0) + delta);
+            }
 
             const updatedItem = { ...item, unread: targetUnread };
             updatedItemsById.set(item.id, updatedItem);
