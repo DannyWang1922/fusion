@@ -28,13 +28,16 @@ type createFeedRequest struct {
 }
 
 type updateFeedRequest struct {
-	GroupID                *int64  `json:"group_id"`
-	Name                   *string `json:"name"`
-	Link                   *string `json:"link"`
-	SiteURL                *string `json:"site_url"`
-	Suspended              *bool   `json:"suspended"`
-	Proxy                  *string `json:"proxy"`
-	RefreshIntervalSeconds *int64  `json:"refresh_interval_seconds"`
+	AllowedCategories      *[]string `json:"allowed_categories"`
+	MaxAgeDays             *int64    `json:"max_age_days"`
+	FetchFullContent       *bool     `json:"fetch_full_content"`
+	GroupID                *int64    `json:"group_id"`
+	Name                   *string   `json:"name"`
+	Link                   *string   `json:"link"`
+	SiteURL                *string   `json:"site_url"`
+	Suspended              *bool     `json:"suspended"`
+	Proxy                  *string   `json:"proxy"`
+	RefreshIntervalSeconds *int64    `json:"refresh_interval_seconds"`
 }
 
 type validateFeedRequest struct {
@@ -185,7 +188,31 @@ func (h *Handler) updateFeed(c *gin.Context) {
 		return
 	}
 
-	params := store.UpdateFeedParams{}
+	params := store.UpdateFeedParams{MaxAgeDays: req.MaxAgeDays, FetchFullContent: req.FetchFullContent}
+	if req.MaxAgeDays != nil && (*req.MaxAgeDays < 0 || *req.MaxAgeDays > 3650) {
+		badRequestError(c, "max_age_days must be between 0 and 3650")
+		return
+	}
+	if req.AllowedCategories != nil {
+		if len(*req.AllowedCategories) > 50 {
+			badRequestError(c, "too many categories")
+			return
+		}
+		categories := []string{}
+		seen := map[string]bool{}
+		for _, value := range *req.AllowedCategories {
+			value = strings.TrimSpace(value)
+			if value == "" || len(value) > 100 {
+				badRequestError(c, "invalid category")
+				return
+			}
+			if !seen[value] {
+				categories = append(categories, value)
+				seen[value] = true
+			}
+		}
+		params.AllowedCategories = &categories
+	}
 	if req.GroupID != nil {
 		params.GroupID = req.GroupID
 	}

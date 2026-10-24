@@ -228,11 +228,12 @@ func (p *Puller) pullFeed(ctx context.Context, feed *model.Feed) {
 	inputs := make([]store.BatchCreateItemInput, 0, len(result.Items))
 	for _, item := range result.Items {
 		inputs = append(inputs, store.BatchCreateItemInput{
-			GUID:    item.GUID,
-			Title:   item.Title,
-			Link:    item.Link,
-			Content: item.Content,
-			PubDate: item.PubDate,
+			GUID:       item.GUID,
+			Categories: item.Categories,
+			Title:      item.Title,
+			Link:       item.Link,
+			Content:    item.Content,
+			PubDate:    item.PubDate,
 		})
 	}
 

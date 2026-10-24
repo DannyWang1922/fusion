@@ -10,16 +10,19 @@ type Group struct {
 
 // Feed represents an RSS/Atom feed.
 type Feed struct {
-	ID                     int64  `json:"id"`
-	GroupID                int64  `json:"group_id"`
-	Name                   string `json:"name"`
-	Link                   string `json:"link"`
-	SiteURL                string `json:"site_url,omitempty"`
-	Suspended              bool   `json:"suspended"`
-	Proxy                  string `json:"proxy,omitempty"`
-	RefreshIntervalSeconds *int64 `json:"refresh_interval_seconds,omitempty"`
-	CreatedAt              int64  `json:"created_at"`
-	UpdatedAt              int64  `json:"updated_at"`
+	AllowedCategories      []string `json:"allowed_categories"`
+	MaxAgeDays             int64    `json:"max_age_days"`
+	FetchFullContent       bool     `json:"fetch_full_content"`
+	ID                     int64    `json:"id"`
+	GroupID                int64    `json:"group_id"`
+	Name                   string   `json:"name"`
+	Link                   string   `json:"link"`
+	SiteURL                string   `json:"site_url,omitempty"`
+	Suspended              bool     `json:"suspended"`
+	Proxy                  string   `json:"proxy,omitempty"`
+	RefreshIntervalSeconds *int64   `json:"refresh_interval_seconds,omitempty"`
+	CreatedAt              int64    `json:"created_at"`
+	UpdatedAt              int64    `json:"updated_at"`
 
 	FetchState FeedFetchState `json:"fetch_state"`
 
@@ -58,15 +61,17 @@ type FeedFetchState struct {
 
 // Item represents a feed item.
 type Item struct {
-	ID        int64  `json:"id"`
-	FeedID    int64  `json:"feed_id"`
-	GUID      string `json:"guid"`
-	Title     string `json:"title"`
-	Link      string `json:"link"`
-	Content   string `json:"content"`
-	PubDate   int64  `json:"pub_date"`
-	Unread    bool   `json:"unread"`
-	CreatedAt int64  `json:"created_at"`
+	Categories           []string `json:"categories"`
+	FullContentFetchedAt int64    `json:"full_content_fetched_at,omitempty"`
+	ID                   int64    `json:"id"`
+	FeedID               int64    `json:"feed_id"`
+	GUID                 string   `json:"guid"`
+	Title                string   `json:"title"`
+	Link                 string   `json:"link"`
+	Content              string   `json:"content"`
+	PubDate              int64    `json:"pub_date"`
+	Unread               bool     `json:"unread"`
+	CreatedAt            int64    `json:"created_at"`
 }
 
 // Settings holds the user's synced preferences. A nil field means the user

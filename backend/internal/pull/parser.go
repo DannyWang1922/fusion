@@ -19,11 +19,12 @@ import (
 
 // ParsedItem represents a feed item after parsing and field mapping.
 type ParsedItem struct {
-	GUID    string
-	Title   string
-	Link    string
-	Content string
-	PubDate int64
+	Categories []string
+	GUID       string
+	Title      string
+	Link       string
+	Content    string
+	PubDate    int64
 }
 
 type FetchResult struct {
@@ -330,11 +331,12 @@ func mapItem(item *gofeed.Item, baseURL *url.URL) *ParsedItem {
 	}
 
 	return &ParsedItem{
-		GUID:    guid,
-		Title:   NormalizeTitle(item.Title),
-		Link:    link,
-		Content: content,
-		PubDate: pubDate,
+		Categories: item.Categories,
+		GUID:       guid,
+		Title:      NormalizeTitle(item.Title),
+		Link:       link,
+		Content:    content,
+		PubDate:    pubDate,
 	}
 }
 

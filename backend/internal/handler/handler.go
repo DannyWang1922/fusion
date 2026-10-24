@@ -12,16 +12,25 @@ import (
 	"github.com/0x2E/fusion/internal/auth"
 	"github.com/0x2E/fusion/internal/config"
 	"github.com/0x2E/fusion/internal/store"
+	"github.com/0x2E/fusion/internal/translation"
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
-	store        *store.Store
-	config       *config.Config
-	passwordHash string // bcrypt hash computed at startup
-	feverAPIKey  string // md5(username:password) used by Fever API
-	allowAnonAPI bool   // true when both password and OIDC auth are disabled
-	puller       interface {
+	fullContentMu      sync.Mutex
+	fullContentWorker  sync.Mutex
+	fullContentJobs    map[int64]*fullContentJob
+	fetchFullContent   func(context.Context, string) (string, error)
+	translationMu      sync.Mutex
+	translationRunning bool
+	translationJobs    map[string]*translationJob
+	translateSegments  func(context.Context, string, string, string, []translation.Segment) ([]translation.Segment, error)
+	store              *store.Store
+	config             *config.Config
+	passwordHash       string // bcrypt hash computed at startup
+	feverAPIKey        string // md5(username:password) used by Fever API
+	allowAnonAPI       bool   // true when both password and OIDC auth are disabled
+	puller             interface {
 		RefreshFeed(ctx context.Context, feedID int64) error
 		RefreshAll(ctx context.Context) (int, error)
 		Wake()
@@ -138,6 +147,10 @@ func (h *Handler) SetupRouter() *gin.Engine {
 
 			auth.GET("/items", h.listItems)
 			auth.GET("/items/:id", h.getItem)
+			auth.GET("/items/:id/full-content", h.getFullContent)
+			auth.POST("/items/:id/full-content", h.startFullContent)
+			auth.GET("/items/:id/translation", h.getTranslation)
+			auth.POST("/items/:id/translation", h.startTranslation)
 			auth.PATCH("/items/-/read", h.markItemsRead)
 			auth.PATCH("/items/-/unread", h.markItemsUnread)
 

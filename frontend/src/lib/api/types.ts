@@ -7,6 +7,9 @@ export interface Group {
 }
 
 export interface Feed {
+ allowed_categories?: string[];
+ max_age_days?: number;
+ fetch_full_content?: boolean;
   id: number;
   group_id: number;
   name: string;
@@ -38,6 +41,8 @@ export interface FeedFetchState {
 }
 
 export interface Item {
+ categories?: string[];
+ full_content_fetched_at?: number;
   id: number;
   feed_id: number;
   guid: string;
@@ -123,6 +128,9 @@ export interface CreateFeedRequest {
 }
 
 export interface UpdateFeedRequest {
+ allowed_categories?: string[];
+ max_age_days?: number;
+ fetch_full_content?: boolean;
   group_id?: number;
   name?: string;
   link?: string;
@@ -226,4 +234,24 @@ export interface OIDCStatusResponse {
 
 export interface OIDCLoginResponse {
   auth_url: string;
+}
+
+export interface TranslationSegment {
+  id: string;
+  text: string;
+  translation: string;
+}
+
+export interface ArticleTranslation {
+  segments: TranslationSegment[];
+  state: "idle" | "running" | "error";
+  error?: string;
+  model: string;
+  available: boolean;
+}
+
+export interface ArticleFullContent {
+ state: "idle" | "running" | "error";
+ error?: string;
+ item?: Item;
 }

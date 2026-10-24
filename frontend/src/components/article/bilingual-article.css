@@ -1,0 +1,25 @@
+.fusion-bilingual-content .fusion-original {
+  display: block;
+  color: var(--muted-foreground);
+}
+
+.fusion-bilingual-content .fusion-original[hidden] {
+  display: none;
+}
+
+.fusion-bilingual-content .fusion-translation {
+  display: block;
+  margin-top: 0.55em;
+  color: var(--foreground);
+  font-weight: 400;
+  line-height: 1.95;
+  white-space: pre-wrap;
+}
+
+.fusion-bilingual-content h1 .fusion-translation,
+.fusion-bilingual-content h2 .fusion-translation,
+.fusion-bilingual-content h3 .fusion-translation,
+.fusion-bilingual-content h4 .fusion-translation {
+  font-size: 0.9em;
+  font-weight: 600;
+}

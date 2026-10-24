@@ -27,7 +27,7 @@ import { useArticleNavigation } from "@/hooks/use-keyboard";
 import { useAutoMarkRead } from "@/hooks/use-auto-mark-read";
 import { useI18n } from "@/lib/i18n";
 import { cn, formatDate } from "@/lib/utils";
-import { processArticleContent } from "@/lib/content";
+import { ArticleReader } from "./article-reader";
 import { getFaviconUrl } from "@/lib/api/favicon";
 import { FeedFavicon } from "@/components/feed/feed-favicon";
 import { toSafeExternalUrl } from "@/lib/safe-url";
@@ -46,7 +46,7 @@ export function ArticleDrawer() {
   } = useUrlState();
   const { getFeedById } = useFeedLookup();
 
-  const { articles, isStarredMode, isItemStarred, getBookmarkByItemId } =
+  const { articles, isItemStarred, getBookmarkByItemId } =
     useArticleList({
       feedId: selectedFeedId,
       groupId: selectedGroupId,
@@ -72,15 +72,14 @@ export function ArticleDrawer() {
 
   const shouldFetchArticle =
     selectedArticleId !== null &&
-    selectedArticleId > 0 &&
-    (isStarredMode || storeArticle === null);
+    selectedArticleId > 0;
   const { data: fetchedArticle } = useItem(
     selectedArticleId,
     shouldFetchArticle,
   );
 
   const article: Item | null =
-    (isStarredMode ? fetchedArticle ?? storeArticle : storeArticle ?? fetchedArticle) ??
+    (fetchedArticle ?? storeArticle) ??
     null;
   // Read state comes from the in-hand row (list/bookmark cache), not the
   // detail refetch: in starred mode the fetched detail can disagree with the
@@ -294,6 +293,7 @@ export function ArticleDrawer() {
                     <span className="text-muted-foreground">
                       {formatDate(article.pub_date)}
                     </span>
+                    {article.categories?.map((category) => <span key={category} className="rounded bg-muted px-2 py-1 text-xs text-muted-foreground">{category}</span>)}
                     {safeArticleLink ? (
                       <a
                         href={safeArticleLink}
@@ -307,15 +307,9 @@ export function ArticleDrawer() {
                   </div>
                 </div>
 
-                <div
-                  className="typeset typeset-article mt-6 min-w-0 max-w-none"
-                  dangerouslySetInnerHTML={{
-                    __html: processArticleContent(
-                      article.content,
-                      safeArticleLink ?? undefined,
-                    ),
-                  }}
-                />
+                <ArticleReader key={article.id} article={article}
+                  fetchFullContent={!!feed?.fetch_full_content}
+                  articleUrl={safeArticleLink ?? undefined} />
               </article>
             </ScrollArea>
 

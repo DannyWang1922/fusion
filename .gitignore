@@ -1,4 +1,5 @@
 .DS_*
+tools/fulltext/node_modules/
 *.db
 *.db-*
 .claude

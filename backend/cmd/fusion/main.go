@@ -46,6 +46,8 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	defer h.CloseTranslations()
+	defer h.CloseFullContent()
 	r := h.SetupRouter()
 
 	addr := ":" + strconv.Itoa(cfg.Port)

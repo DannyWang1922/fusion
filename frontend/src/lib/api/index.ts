@@ -24,6 +24,9 @@ import type {
   OIDCStatusResponse,
   OIDCLoginResponse,
   AppInfoResponse,
+  ArticleFullContent,
+  ArticleTranslation,
+  TranslationSegment,
   Settings,
   UpdateSettingsRequest,
 } from "./types";
@@ -129,6 +132,12 @@ export const bookmarkAPI = {
   delete: (id: number) => api.delete<void>(`/bookmarks/${id}`),
 };
 
+export const translationAPI = {
+  get: (id: number) => api.get<APIResponse<ArticleTranslation>>(`/items/${id}/translation`),
+  start: (id: number, segments: TranslationSegment[]) =>
+    api.post<APIResponse<ArticleTranslation>>(`/items/${id}/translation`, { segments }),
+};
+
 // Settings APIs
 export const settingsAPI = {
   get: () => api.get<APIResponse<Settings>>("/settings"),
@@ -152,3 +161,8 @@ export const appAPI = {
 
 export * from "./types";
 export { APIError, setUnauthorizedCallback } from "./client";
+
+export const fullContentAPI = {
+ get: (id: number) => api.get<APIResponse<ArticleFullContent>>(`/items/${id}/full-content`),
+ start: (id: number) => api.post<APIResponse<ArticleFullContent>>(`/items/${id}/full-content`),
+};

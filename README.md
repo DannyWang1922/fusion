@@ -14,7 +14,8 @@
 - Responsive web UI with PWA support
 - Self-hosting friendly: single binary or Docker deployment
 - Built-in i18n: English, Chinese, German, French, Spanish, Russian, Portuguese, Swedish
-- No AI features by design: focused, distraction-free RSS reading
+- Per-feed RSS category and rolling date filters, with optional on-demand OpenAI article extraction and a local full-text cache (see [worker setup](tools/fulltext/README.md))
+- Optional paragraph-by-paragraph Chinese translation through a locally authenticated Codex CLI, with a persistent translation cache
 
 ## Installation
 

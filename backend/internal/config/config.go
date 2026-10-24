@@ -9,10 +9,14 @@ import (
 )
 
 type Config struct {
-	DBPath        string
-	Password      string // Plaintext password from env
-	Port          int
-	FeverUsername string // Username used to derive Fever API key.
+	FullContentNodePath   string
+	FullContentScriptPath string
+	TranslationCodexPath  string
+	TranslationModel      string
+	DBPath                string
+	Password              string // Plaintext password from env
+	Port                  int
+	FeverUsername         string // Username used to derive Fever API key.
 
 	CORSAllowedOrigins []string // Allowed Origins for CORS. Empty means allow all.
 	TrustedProxies     []string // Trusted reverse proxies for client IP resolution. Empty disables proxy trust.
@@ -129,22 +133,26 @@ func Load() (*Config, error) {
 	}
 
 	return &Config{
-		DBPath:             dbPath,
-		Password:           password,
-		Port:               parsedPort,
-		FeverUsername:      getEnvString("FUSION_FEVER_USERNAME", "fusion"),
-		CORSAllowedOrigins: corsAllowedOrigins,
-		TrustedProxies:     trustedProxies,
-		AllowPrivateFeeds:  allowPrivateFeeds,
-		PullInterval:       pullInterval,
-		PullTimeout:        pullTimeout,
-		PullConcurrency:    pullConcurrency,
-		PullMaxBackoff:     pullMaxBackoff,
-		LoginRateLimit:     loginRateLimit,
-		LoginWindow:        loginWindow,
-		LoginBlock:         loginBlock,
-		LogLevel:           logLevel,
-		LogFormat:          logFormat,
+		FullContentNodePath:   getEnvString("FUSION_FULL_CONTENT_NODE_PATH", "node"),
+		FullContentScriptPath: getEnvString("FUSION_FULL_CONTENT_SCRIPT_PATH", "tools/fulltext/fetch.mjs"),
+		TranslationCodexPath:  getEnvString("FUSION_TRANSLATION_CODEX_PATH", "codex"),
+		TranslationModel:      getEnvString("FUSION_TRANSLATION_MODEL", "gpt-6.1-sol"),
+		DBPath:                dbPath,
+		Password:              password,
+		Port:                  parsedPort,
+		FeverUsername:         getEnvString("FUSION_FEVER_USERNAME", "fusion"),
+		CORSAllowedOrigins:    corsAllowedOrigins,
+		TrustedProxies:        trustedProxies,
+		AllowPrivateFeeds:     allowPrivateFeeds,
+		PullInterval:          pullInterval,
+		PullTimeout:           pullTimeout,
+		PullConcurrency:       pullConcurrency,
+		PullMaxBackoff:        pullMaxBackoff,
+		LoginRateLimit:        loginRateLimit,
+		LoginWindow:           loginWindow,
+		LoginBlock:            loginBlock,
+		LogLevel:              logLevel,
+		LogFormat:             logFormat,
 
 		OIDCIssuer:       os.Getenv("FUSION_OIDC_ISSUER"),
 		OIDCClientID:     os.Getenv("FUSION_OIDC_CLIENT_ID"),
