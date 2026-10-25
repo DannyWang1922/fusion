@@ -41,9 +41,9 @@ export function FeedItem({ feed }: FeedItemProps) {
           {feed.name}
         </span>
       </button>
-      <div className="ml-2 flex h-6 shrink-0 items-center justify-center">
-        <span className="text-[11px] text-muted-foreground md:group-hover:hidden md:group-focus-within:hidden">
-          {feed.unread_count > 0 ? feed.unread_count : ""}
+      <div className="ml-2 flex h-6 shrink-0 items-center justify-center gap-1">
+        <span className="text-[11px] text-muted-foreground">
+          {feed.unread_count ?? 0}
         </span>
         <Button
           variant="ghost"

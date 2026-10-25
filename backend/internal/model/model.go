@@ -25,8 +25,10 @@ type Feed struct {
 
 	FetchState FeedFetchState `json:"fetch_state"`
 
-	UnreadCount int64 `json:"unread_count"`
-	ItemCount   int64 `json:"item_count"`
+	UnreadCount      int64 `json:"unread_count"`
+	ItemCount        int64 `json:"item_count"`
+	OlderUnreadCount int64 `json:"older_unread_count"`
+	OlderItemCount   int64 `json:"older_item_count"`
 }
 
 // FeedFetchState stores runtime pull metadata for a feed.

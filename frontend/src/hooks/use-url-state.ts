@@ -107,7 +107,6 @@ export function useUrlState() {
     (feedId: number | null) => {
       navigateToList({
         feedId,
-        period: "recent",
         groupId: null,
         articleId: null,
       });
@@ -119,7 +118,6 @@ export function useUrlState() {
     (groupId: number | null) => {
       navigateToList({
         groupId,
-        period: "recent",
         feedId: null,
         articleId: null,
       });
@@ -147,11 +145,10 @@ export function useUrlState() {
     (filter: ArticleFilter) => {
       navigateToList({
         filter,
-        period: filter === "starred" || articleFilter === "starred" ? "recent" : articlePeriod,
         articleId: null,
       });
     },
-    [navigateToList, articleFilter, articlePeriod],
+    [navigateToList],
   );
 
   const setArticlePeriod = useCallback((period: ArticlePeriod) => {
@@ -162,7 +159,6 @@ export function useUrlState() {
     (filter: ArticleFilter) => {
       navigateToList({
         filter,
-        period: "recent",
         feedId: null,
         groupId: null,
         articleId: null,

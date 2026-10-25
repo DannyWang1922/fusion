@@ -64,7 +64,7 @@ func TestRecentDefaultAndOlderWindowPreserveSavedContent(t *testing.T) {
 		}
 	}
 	feeds, _ := st.ListFeeds()
-	if feeds[0].UnreadCount != 1 || feeds[0].ItemCount != 1 {
+	if feeds[0].UnreadCount != 1 || feeds[0].ItemCount != 1 || feeds[0].OlderUnreadCount != 2 || feeds[0].OlderItemCount != 2 {
 		t.Fatalf("recent counts: %+v", feeds[0])
 	}
 	item := old.Data[0]
@@ -79,8 +79,15 @@ func TestRecentDefaultAndOlderWindowPreserveSavedContent(t *testing.T) {
 		t.Fatal(err)
 	}
 	feeds, _ = st.ListFeeds()
-	if feeds[0].UnreadCount != 1 {
-		t.Fatal("historical read changed recent unread badge")
+	if feeds[0].UnreadCount != 1 || feeds[0].OlderUnreadCount != 1 || feeds[0].OlderItemCount != 2 {
+		t.Fatal("historical read did not update only its own unread window")
+	}
+	if err := st.BatchUpdateItemsUnread([]int64{recent.Data[0].ID}, false); err != nil {
+		t.Fatal(err)
+	}
+	feeds, _ = st.ListFeeds()
+	if feeds[0].UnreadCount != 0 || feeds[0].OlderUnreadCount != 1 {
+		t.Fatalf("recent read changed historical count: %+v", feeds[0])
 	}
 	for _, query := range []struct {
 		path string

@@ -108,7 +108,7 @@ function applyOptimisticItemReadState(
   prevFeeds: Feed[] | undefined,
 ) {
   const idSet = new Set(ids);
-  const feedDeltaMap = new Map<number, number>();
+  const feedDeltaMap = new Map<number, { recent: number; older: number }>();
   const updatedItemsById = new Map<number, Item>();
   const countedIds = new Set<number>();
   const now = Math.floor(Date.now() / 1000);
@@ -127,11 +127,13 @@ function applyOptimisticItemReadState(
               return item;
             }
 
-            // Sidebar badges count recent articles once, across all cached lists.
-            if (!countedIds.has(item.id) && item.pub_date >= now - 90 * 86400 && item.pub_date <= now) {
+            // Count each item once even when it is cached in several lists.
+            if (!countedIds.has(item.id) && item.pub_date <= now) {
               countedIds.add(item.id);
-              const delta = targetUnread ? 1 : -1;
-              feedDeltaMap.set(item.feed_id, (feedDeltaMap.get(item.feed_id) ?? 0) + delta);
+              const period = item.pub_date < now - 90 * 86400 ? "older" : "recent";
+              const changes = feedDeltaMap.get(item.feed_id) ?? { recent: 0, older: 0 };
+              changes[period] += targetUnread ? 1 : -1;
+              feedDeltaMap.set(item.feed_id, changes);
             }
 
             const updatedItem = { ...item, unread: targetUnread };
@@ -157,12 +159,13 @@ function applyOptimisticItemReadState(
   if (prevFeeds && feedDeltaMap.size > 0) {
     qc.setQueryData(queryKeys.feeds.list(), (old: Feed[] | undefined) =>
       old?.map((feed) => {
-        const delta = feedDeltaMap.get(feed.id) ?? 0;
-        if (delta === 0) return feed;
+        const changes = feedDeltaMap.get(feed.id);
+        if (!changes) return feed;
 
         return {
           ...feed,
-          unread_count: Math.max(0, feed.unread_count + delta),
+          unread_count: Math.max(0, feed.unread_count + changes.recent),
+          older_unread_count: Math.max(0, feed.older_unread_count + changes.older),
         };
       }),
     );

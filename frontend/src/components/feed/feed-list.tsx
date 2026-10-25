@@ -14,15 +14,17 @@ import { FeedItem } from "./feed-item";
 export function FeedList() {
   const { t } = useI18n();
   const { data: groups = [], isLoading } = useGroups();
-  const { feeds, getFeedsByGroup } = useFeedLookup();
-  const { getTotalUnreadCount } = useUnreadCounts();
   const { total: starredTotal } = useBookmarkLookup();
   const {
     selectedFeedId,
     selectedGroupId,
     articleFilter,
+    articlePeriod,
+    setArticlePeriod,
     selectTopLevelFilter,
   } = useUrlState();
+  const { feeds, getFeedsByGroup } = useFeedLookup(articlePeriod);
+  const { getTotalUnreadCount } = useUnreadCounts(articlePeriod);
   const { pathname } = useLocation();
   const firstPathSegment = pathname.split("/").filter(Boolean)[0];
   const isOnHomePage =
@@ -102,6 +104,33 @@ export function FeedList() {
             {t("search.group.feeds")}
           </span>
         </div>
+
+        <fieldset disabled={articleFilter === "starred"} className="mx-2 mb-2 min-w-0">
+          <legend className="sr-only">{t("sidebar.period.label")}</legend>
+          <div role="group" aria-label={t("sidebar.period.label")} className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+            {(["recent", "older"] as const).map((period) => (
+              <button
+                key={period}
+                type="button"
+                aria-pressed={articlePeriod === period}
+                onClick={() => setArticlePeriod(period)}
+                className={cn(
+                  "min-w-0 rounded-md px-2 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-50",
+                  articlePeriod === period
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {t(period === "recent" ? "article.period.recent" : "article.period.olderShort")}
+              </button>
+            ))}
+          </div>
+          {articleFilter === "starred" && (
+            <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
+              {t("article.period.bookmarks")}
+            </p>
+          )}
+        </fieldset>
 
         {/* Feed groups */}
         <div className="w-full min-w-0 space-y-0.5">

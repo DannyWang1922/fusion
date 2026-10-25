@@ -36,7 +36,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="sidebar-typography flex h-full w-75 flex-none flex-col overflow-hidden border-r bg-sidebar text-sidebar-foreground">
+    <aside className="sidebar-typography flex h-full w-full md:w-75 flex-none flex-col overflow-hidden border-r bg-sidebar text-sidebar-foreground">
       {/* Header */}
       <div className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
         <img

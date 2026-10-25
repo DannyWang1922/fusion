@@ -22,6 +22,8 @@ export interface Feed {
   fetch_state: FeedFetchState;
   unread_count: number;
   item_count: number;
+  older_unread_count: number;
+  older_item_count: number;
 }
 
 export interface FeedFetchState {

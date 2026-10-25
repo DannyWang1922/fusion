@@ -5,7 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { feedAPI, type Feed } from "@/lib/api";
+import { feedAPI, type ArticlePeriod, type Feed } from "@/lib/api";
 import { queryKeys } from "./keys";
 
 export const feedQueries = {
@@ -23,8 +23,11 @@ export function useFeeds() {
   return useQuery(feedQueries.list());
 }
 
-export function useFeedLookup() {
-  const { data: feeds = [], isLoading } = useFeeds();
+export function useFeedLookup(period: ArticlePeriod = "recent") {
+  const { data: storedFeeds = [], isLoading } = useFeeds();
+  const feeds = useMemo(() => period === "older"
+    ? storedFeeds.map((feed) => ({ ...feed, unread_count: feed.older_unread_count, item_count: feed.older_item_count }))
+    : storedFeeds, [storedFeeds, period]);
 
   const feedMap = useMemo(() => new Map(feeds.map((f) => [f.id, f])), [feeds]);
 
@@ -41,8 +44,8 @@ export function useFeedLookup() {
   return { feeds, getFeedById, getFeedsByGroup, isLoading };
 }
 
-export function useUnreadCounts() {
-  const { data: feeds = [] } = useFeeds();
+export function useUnreadCounts(period: ArticlePeriod = "recent") {
+  const { feeds } = useFeedLookup(period);
 
   const getUnreadCount = useCallback(
     (feedId: number) => feeds.find((f) => f.id === feedId)?.unread_count ?? 0,
@@ -92,8 +95,15 @@ export function useUpdateFeed() {
     },
     onSuccess: (updated) => {
       qc.setQueryData(queryKeys.feeds.list(), (old: Feed[] | undefined) =>
-        old?.map((f) => (f.id === updated.id ? updated : f)),
+        old?.map((f) => (f.id === updated.id ? {
+          ...updated,
+          unread_count: f.unread_count,
+          item_count: f.item_count,
+          older_unread_count: f.older_unread_count,
+          older_item_count: f.older_item_count,
+        } : f)),
       );
+      void qc.invalidateQueries({ queryKey: queryKeys.feeds.all });
     },
   });
 }

@@ -12,7 +12,7 @@ import (
 )
 
 // feedSelectColumns is the shared feed + fetch-state projection used by every
-// feed read. ListFeeds appends the two item-count aggregates on top of it.
+// feed read. ListFeeds appends recent and historical item counts on top of it.
 const feedSelectColumns = `f.id, f.group_id, f.name, f.link, f.site_url,
 	       f.suspended, f.proxy, f.refresh_interval_seconds, f.created_at, f.updated_at,
 	       f.allowed_categories, f.fetch_full_content,
@@ -58,7 +58,7 @@ func scanFeed(row rowScanner, withCounts bool) (*model.Feed, error) {
 		&f.FetchState.ConsecutiveFailures,
 	}
 	if withCounts {
-		dest = append(dest, &f.UnreadCount, &f.ItemCount)
+		dest = append(dest, &f.UnreadCount, &f.ItemCount, &f.OlderUnreadCount, &f.OlderItemCount)
 	}
 	if err := row.Scan(dest...); err != nil {
 		return nil, err
@@ -77,11 +77,13 @@ func scanFeed(row rowScanner, withCounts bool) (*model.Feed, error) {
 func (s *Store) ListFeeds() ([]*model.Feed, error) {
 	rows, err := s.db.Query(`
 		SELECT ` + feedSelectColumns + `,
-		       COALESCE(SUM(CASE WHEN i.unread = 1 THEN 1 ELSE 0 END), 0) AS unread_count,
-		       COALESCE(COUNT(i.id), 0) AS item_count
+		       COALESCE(SUM(CASE WHEN i.unread = 1 AND i.pub_date >= unixepoch()-90*86400 AND i.pub_date <= unixepoch() THEN 1 ELSE 0 END), 0) AS unread_count,
+               COALESCE(SUM(CASE WHEN i.pub_date >= unixepoch()-90*86400 AND i.pub_date <= unixepoch() THEN 1 ELSE 0 END), 0) AS item_count,
+               COALESCE(SUM(CASE WHEN i.unread = 1 AND i.pub_date < unixepoch()-90*86400 THEN 1 ELSE 0 END), 0) AS older_unread_count,
+               COALESCE(SUM(CASE WHEN i.pub_date < unixepoch()-90*86400 THEN 1 ELSE 0 END), 0) AS older_item_count
 		FROM feeds f
 		LEFT JOIN feed_fetch_state fs ON fs.feed_id = f.id
-		LEFT JOIN visible_items i ON i.feed_id = f.id
+		LEFT JOIN eligible_items i ON i.feed_id = f.id
 		GROUP BY f.id, f.group_id, f.name, f.link, f.site_url,
 		         f.suspended, f.proxy, f.refresh_interval_seconds, f.created_at, f.updated_at,
 	       f.allowed_categories, f.fetch_full_content,

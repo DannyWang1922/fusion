@@ -41,7 +41,7 @@ func TestReadingPolicyPreservesHiddenItemsAndReadState(t *testing.T) {
 		t.Fatalf("count: %d %v", count, err)
 	}
 	feeds, err := s.ListFeeds()
-	if err != nil || feeds[0].ItemCount != 1 || feeds[0].UnreadCount != 1 {
+	if err != nil || feeds[0].ItemCount != 1 || feeds[0].UnreadCount != 1 || feeds[0].OlderItemCount != 1 || feeds[0].OlderUnreadCount != 1 {
 		t.Fatalf("feed counts: %+v %v", feeds, err)
 	}
 	search, err := s.SearchItemsInPeriod("policy", 100, "recent")

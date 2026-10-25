@@ -1,10 +1,12 @@
 import type { PartialMessages } from "./types";
 
 export const esMessages: PartialMessages = {
+  "sidebar.period.label": "Periodo de lectura",
+  "article.period.olderShort": "Artículos anteriores",
+  "article.period.allDates": "Todas las fechas",
+
   "article.period.recent": "Last 90 days",
   "article.period.older": "Articles older than 90 days",
-  "article.period.back": "Back to last 90 days",
-  "article.period.showOlder": "View older articles ({count})",
   "article.period.noRecent": "No articles in the last 90 days.",
   "article.period.noOlder": "No older articles in this view.",
   "article.period.bookmarks": "Saved articles from all dates",

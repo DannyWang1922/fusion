@@ -1,10 +1,12 @@
 import type { PartialMessages } from "./types";
 
 export const zhMessages: PartialMessages = {
+  "sidebar.period.label": "阅读时间范围",
+  "article.period.olderShort": "更早文章",
+  "article.period.allDates": "全部时间",
+
   "article.period.recent": "近 90 天",
   "article.period.older": "90 天前的文章",
-  "article.period.back": "返回近 90 天",
-  "article.period.showOlder": "查看更早文章（{count} 篇）",
   "article.period.noRecent": "近 90 天暂无文章。",
   "article.period.noOlder": "当前范围内没有更早的文章。",
   "article.period.bookmarks": "收藏保留全部时间的文章",
